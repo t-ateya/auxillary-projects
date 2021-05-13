@@ -12,10 +12,10 @@ SSH_SKEL=/etc/skel/.ssh
 
 #variable for public key file 
 
-
+AUTH=authorized_keys
 
 #Check if group exists
-if [$(getent group developers)];
+if [ $(getent group developers) ];
 then
     echo group already exists
 else
@@ -24,11 +24,14 @@ else
 fi 
 
 #add ssh folder to skel directory
-if [-d "SSH_SKEL"];
+if [ -d "SSH_SKEL" ];
 then 
     echo "SSH_SKEL already exists"
 else 
     sudo mkdir -p SSH_SKEL
+    sudo bash -c "cat $AUTH >> $SSH_SKEL/authorized_keys"
+fi
+
 
 #create each user on the server
 while IFS= read USERNAME
@@ -39,3 +42,13 @@ while IFS= read USERNAME
             echo $USERNAME alread exists
         else 
             sudo useradd -m -G $GROUP_NAME $USERNAME 
+            sudo echo -e "$PASSWORD\nPASSWORD" | $sudo passwd "${USERNAME}"
+            sudo passwd -x 5 ${USERNAME}
+            sudo chmod 700 /home/$USERNAME/.ssh
+            sudo chmod 644 /home/$USERNAME/.ssh/authorized_keys
+            echo "$USERNAME successfully created"
+        fi
+    done <$CSV_FILE
+exit 0
+
+
